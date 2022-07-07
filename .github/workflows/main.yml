@@ -25,6 +25,7 @@ jobs:
   build_and_push:
     runs-on: ubuntu-latest
     name: Build and push docker image
+    needs: lint
     outputs:
       commit_hash: ${{ steps.commit_hash.outputs.commit_hash }}
     steps:
