@@ -28,10 +28,15 @@ jobs:
   build_and_push:
     runs-on: ubuntu-latest
     needs: lint
+    outputs:
+      commit_hash: ${{ steps.commit_hash.outputs.commit_hash }}
 
     steps:
       - name: Checkout files
         uses: actions/checkout@v2
+
+      - id: commit_hash
+        run: echo "::set-output name=commit_hash::${GITHUB_SHA::7}"
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
@@ -45,7 +50,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.REGISTRY }}:$(echo $GITHUB_SHA | head -c7)
+            ${{ env.REGISTRY }}:${{ steps.commit_hash.outputs.commit_hash }}
 
   deploy:
     needs: build_and_push
@@ -60,7 +65,7 @@ jobs:
           host: ${{ env.HOST }}
           username: ${{ env.USERNAME }}
           key: ${{ secrets.KEY }}
-          envs: REGISTRY,GITHUB_SHA, ${{ secrets.DOCKER_USER }}, ${{ secrets.DOCKERHUB_TOKEN }}
+          envs: ${{ secrets.DOCKER_USER }}, ${{ secrets.DOCKERHUB_TOKEN }}
           port: 22
           script: |
             # login docker
@@ -75,4 +80,4 @@ jobs:
             --restart always \
             -p 80:5000 \
             --name flask-app \
-            ${{ env.REGISTRY }}:$(echo $GITHUB_SHA | head -c7)
+            ${{ env.REGISTRY }}:${{ needs.build_and_push.outputs.commit_hash }}
