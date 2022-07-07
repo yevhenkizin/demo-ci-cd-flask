@@ -8,8 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: "registry.hub.docker.com/koteikin"
-  IMAGE_NAME: "ci-cd-flask-app"
+  REGISTRY: "koteikin/ci-cd-flask-app"
 
 jobs:
   lint:
@@ -46,7 +45,7 @@ jobs:
           context: .
           push: true
           tags: |
-            $(echo $REGISTRY)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)
+            $(echo $REGISTRY):$(echo $GITHUB_SHA | head -c7)
 
   deploy:
     needs: build_and_push
@@ -61,7 +60,7 @@ jobs:
           host: ${{ env.HOST }}
           username: ${{ env.USERNAME }}
           key: ${{ secrets.KEY }}
-          envs: IMAGE_NAME,REGISTRY,GITHUB_SHA, ${{ secrets.DOCKER_USER }}, ${{ secrets.DOCKERHUB_TOKEN }}
+          envs: REGISTRY,GITHUB_SHA, ${{ secrets.DOCKER_USER }}, ${{ secrets.DOCKERHUB_TOKEN }}
           port: 22
           script: |
             # login docker
@@ -76,4 +75,4 @@ jobs:
             --restart always \
             -p 80:5000 \
             --name flask-app \
-            $(echo $REGISTRY)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)
+            $(echo $REGISTRY):$(echo $GITHUB_SHA | head -c7)
