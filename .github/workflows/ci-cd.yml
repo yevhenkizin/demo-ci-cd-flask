@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: "koteikin"
+  REGISTRY: "registry.hub.docker.com/koteikin"
   IMAGE_NAME: "ci-cd-flask-app"
 
 jobs:
