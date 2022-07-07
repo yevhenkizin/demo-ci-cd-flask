@@ -12,18 +12,19 @@ env:
   IMAGE_NAME: "ci-cd-flask-app"
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    name: Lint
-    steps:
-      - name: Check out source repository
-        uses: actions/checkout@v2
-      - name: Set up Python environment
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.10"
-      - name: flake8 Lint
-        uses: py-actions/flake8@v2
+  # lint:
+  #   runs-on: ubuntu-latest
+  #   name: Lint
+  #   steps:
+  #     - name: Check out source repository
+  #       uses: actions/checkout@v2
+
+  #     - name: Set up Python environment
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: "3.10"
+  #     - name: flake8 Lint
+  #       uses: py-actions/flake8@v2
 
   build_and_push:
     runs-on: ubuntu-latest
@@ -44,7 +45,8 @@ jobs:
         with:
           context: .
           push: true
-          tags: $(echo $REGISTRY)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)
+          tags: |
+            $(echo $REGISTRY)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)
 
   deploy:
     needs: build_and_push
