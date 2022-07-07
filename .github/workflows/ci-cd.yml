@@ -1,0 +1,76 @@
+name: CI-CD
+
+on:
+  push:
+    branches:
+    - stage
+
+  workflow_dispatch:
+
+env:
+  REGISTRY: "koteikin/ci-cd-flask-app"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v2
+      - name: Set up Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: flake8 Lint
+        uses: py-actions/flake8@v2
+
+  build_and_push:
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout files
+        uses: actions/checkout@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: $(echo $REGISTRY):$(echo $GITHUB_SHA | head -c7)
+
+  deploy:
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    env:
+      HOST: 35.152.75.102
+      USERNAME: admin
+    steps:
+      - name: Deploy to EC2 instanse via SSH action
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+          host: ${{ env.HOST }}
+          username: ${{ env.USERNAME }}
+          key: ${{ secrets.KEY }}
+          envs: REGISTRY,GITHUB_SHA, ${{ secrets.DOCKER_USER }}, ${{ secrets.DOCKERHUB_TOKEN }}
+          port: 22
+          script: |
+            # login docker
+            docker login -u $DOCKER_USER -p $DOCKERHUB_TOKEN
+
+            docker stop flask-app
+
+            docker rm flask-app
+
+            # Run a new container from a new image
+            docker run -d \
+            --restart always \
+            -p 80:5000 \
+            --name flask-app \
+            $(echo $REGISTRY):$(echo $GITHUB_SHA | head -c7)
